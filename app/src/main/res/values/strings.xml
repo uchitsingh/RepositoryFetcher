@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">RepositoryFetcher</string>
+    <string name="repository_name">Name: </string>
+    <string name="repository_id">ID:</string>
+</resources>
