@@ -20,7 +20,7 @@ class RepositoryActivity : AppCompatActivity() {
         initializeRecyvlerView()
         viewModel = ViewModelProviders.of(this).get(RepositoryViewModel::class.java)
         viewModel.getData()
-        viewModel.getRepos().observe(this, Observer { repos ->
+        viewModel.repoObservable.observe(this, Observer { repos ->
             repositoryAdapter.setData(repos)
         })
     }

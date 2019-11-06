@@ -1,39 +1,46 @@
 package com.tdd.uchit.repositoryfetcher.vierwmodel
 
 import android.util.Log
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.tdd.uchit.repositoryfetcher.RepoApi
 import com.tdd.uchit.repositoryfetcher.model.Repository
-import io.reactivex.android.schedulers.AndroidSchedulers
-import io.reactivex.disposables.CompositeDisposable
-import io.reactivex.schedulers.Schedulers
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 class RepositoryViewModel : ViewModel() {
 
-    private val disposable = CompositeDisposable()
-    private val reposObservable: MutableLiveData<List<Repository>> = MutableLiveData()
+    private var _reposObservable: MutableLiveData<List<Repository>> = MutableLiveData()
+    val repoObservable: LiveData<List<Repository>>
+        get() = _reposObservable
+
+    private val viewModelJob = Job()
+    private val coroutineScope = CoroutineScope(
+        viewModelJob + Dispatchers.Main
+    )
 
     fun getData() {
-        disposable.add(
-            RepoApi.retrofitService.getRepos()
-            .subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe(
-                { repos ->
-                    Log.i(TAG, repos.toString())
-                    reposObservable.value = repos
-                },
-                {
-                    Log.i(TAG, it.message)
-                }))
-    }
+        coroutineScope.launch {
+            val getReposDeferred = RepoApi
+                .retrofitService
+                .getRepos()
 
-    fun getRepos() = reposObservable
+            try {
+                val listResult = getReposDeferred.await()
+                Log.i(TAG, listResult.toString())
+                _reposObservable.value = listResult
+            } catch (e: Exception) {
+                Log.i(TAG, e.message)
+            }
+        }
+    }
 
     override fun onCleared() {
         super.onCleared()
-        disposable.clear()
+        viewModelJob.cancel()
     }
 
     companion object {
